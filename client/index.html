@@ -1,0 +1,637 @@
+﻿<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Celeste Classic Client</title>
+        <meta name="description" content="">
+
+<STYLE TYPE="text/css">
+<!--
+
+html {
+    color: white;
+}
+
+h1 {
+    color: #ff004d;
+    text-decoration: underline;
+    text-decoration-color: white;
+    margin-top: 0px;
+}
+
+.default-hidden {
+    display: none;
+}
+
+.submit-wrapper {
+    display: table-cell;
+}
+
+.status-wrapper {
+    width: 150px;
+
+}
+
+#status-connected {
+    color: green;
+}
+#status-failed {
+    color: red;
+}
+#status-connecting {
+    color: green;
+}
+#chat {
+    overflow-y: auto;
+    height: 20ch;
+    border: solid;
+    border-block-color: black;
+}
+
+
+
+.p8_menu_button{
+    opacity:0.3;
+    padding:4px;
+    display:table;
+    width:24px;
+    height:24px;
+    float:right;
+}
+
+@media screen and (min-width:512px) {
+    .p8_menu_button{
+        width:24px; margin-left:12px; margin-bottom:8px;
+    }
+}
+.p8_menu_button:hover{
+    opacity:1.0;
+    cursor:pointer;
+}
+
+canvas{
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+    border: 0px;
+    cursor: none;
+}
+
+
+.p8_start_button{
+    cursor:pointer;
+    background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACzElEQVR4Ae3dMW7bMBSAYVXI3Mk9g1F48AE8+QIevRO6AgduRLYOvYKhvWMukCkHyJAhd+ghOghQCZGiJUbik6z/gyAo9AMVvfdIrgWQyBr9OB9zPOybKzg+PB7pBWjvwZ+Gx2OUkhRQAArgbTXtc2erCcbAZ40mCQAAAAAAAAAGU6pSqpr7FbLfWG68xnV9m29yazSrCAAAzMQaTRIAAACAjVGqIgnC2acGMs6nC+sgpWcnSZab/cbuateYkLIoCmv06nr/9e2FbpbR1+nuODtSjn2/rwZN9uORmLL3+ypEDQQKsDrfMr+vszvX9S24ZbvjzfPuav/+ee7b4puYtPmD82RTCmY/clp2xt3sR+KT5xc8vZ/yL7p4twYFs98X74/760m268WcT5fgwdiM+7+mxXeuyGx980zLGm2NXmIB2j/jie6MROKDM9wtwNxfHS+AwBbU983u+OvbS0J8Wjb73juV51+/l3II+5/X98Hn02XUedgkcfj8Y5sDyGh3tSud/MGzHznKqME0ecmWGmognBEKIJwOCvDf9x8/BUu+9UpIfX9T9ea+3RqI9H7w7RutwbQFsEavtBU2ugKoAWi3B1sHX9mFAQAAAAAAgNVRqiIJADCL42Hf3v2fguOYsQD+AzLVoG35yJoAK4AzAACyUKoiCePyRcqKoihJARJZo9nKAADA6hwP++YKPrsx7XN7j8zjxgTn73uFOyhMqSp/AUbd/an8Ig2ZYeD8syr9obq+5SnG+8enn8R4zZJjjod9+7oFNbvsFpTcs19ZAUMic3pabG2CyR07j7vI3Hnc1eDHAEKN3+n9dlvoHNd3j/QhzyIbzopPhbtnbMJefzzslarI/P1k3T0JOjEDn1kBYisg+WCfXLnkerx/fMYb2a9BPGZ4ACZjjbZGL/bfW+4K2EhzkAQKAKyAUpVSFXngEAYAAAAAAAAArNE/AYM3iL+BQj8AAAAQdEVYdExvZGVQTkcAMjAxMTAyMjHjWbbBAAAAAElFTkSuQmCC");
+    -repeat center;
+    -webkit-background-size:cover; -moz-background-size:cover; -o-background-size:cover; background-size:cover;
+}
+
+.button_gfx{
+    stroke-width:2;
+    stroke: #ffffff;
+    stroke-opacity:0.4;
+    fill-opacity:0.2;
+    fill:black;
+}
+
+.button_gfx_icon{
+    stroke-width:3;
+    stroke: #909090;
+    stroke-opacity:0.7;
+    fill:none;
+}
+
+
+-->
+</STYLE>
+
+    <script type="text/javascript" src="pico8-gpio-listener.js"></script>
+    <script type="module">
+        import {
+            Client,
+            Item,
+        } from "https://unpkg.com/archipelago.js@2.0.2/dist/index.js";
+
+        // https://stackoverflow.com/a/71574505
+        var params = window.location.search.slice(1).split("&");
+        //convert the params to an object
+        var data = params.reduce((obj, param) => {
+          var pair = param.split("=");
+          return { ...obj,
+            [pair[0]]: decodeURIComponent(pair[1])
+          }
+        }, {});
+        //console.log({data});
+        //insert values by matching input name to data object key
+        const fillable_forms = ["Hostname", "Port", "Name", "Password"]
+        for (var index in fillable_forms) {
+            const key = fillable_forms[index]
+            if (key in data) {
+                document.getElementById(key).value = data[key]
+            }
+        }
+        // document.querySelectorAll("input").forEach(input => input.value = data[input.name]);
+
+        // Create a new Archipelago client
+        const client = new Client();
+
+        // start chat from phar
+        client.messages.on("message", onMessage);
+
+        function onMessage(text, nodes) {
+            // Plaintext to console, because why not?
+            console.log(text);
+
+            const chat = document.getElementById("chat");
+            const messageElement = document.createElement("div");
+
+            for (const node of nodes) {
+                const nodeElement = document.createElement("span");
+                nodeElement.innerText = node.text;
+
+                switch (node.type) {
+                    case "entrance":
+                        nodeElement.style.color = "#6495ED";
+                        break;
+
+                    case "location":
+                        nodeElement.style.color = "#00FF7F";
+                        break;
+
+                    case "color":
+                        // not really correct, but technically the only color nodes the server returns is "green" or "red"
+                        // so it's fine enough for an example.
+                        nodeElement.style.color = node.color;
+                        break;
+
+                    case "player":
+                        if (node.player.slot === client.players.self.slot) {
+                            // It's us!
+                            nodeElement.style.color = "#EE00EE";
+                        } else {
+                            // It's them!
+                            nodeElement.style.color = "#FAFAD2";
+                        }
+                        break;
+
+                    case "item": {
+                        // doesn't account for prog+useful or other combinations, but this is just as an example
+                        if (node.item.progression) {
+                            nodeElement.style.color = "#AF99EF";
+                        } else if (node.item.useful) {
+                            nodeElement.style.color = "#6D8BE8";
+                        } else if (node.item.trap) {
+                            nodeElement.style.color = "#FA8072";
+                        } else {
+                            nodeElement.style.color = "#00EEEE";
+                        }
+                    }
+
+                    // no special coloring needed
+                    case "text":
+                    default:
+                        break;
+                }
+
+                messageElement.appendChild(nodeElement);
+            }
+
+            chat.appendChild(messageElement);
+            messageElement.scrollIntoView(false);
+        }
+        // end chat from phar
+
+
+        const form = document.getElementById("connection_details")
+
+        //pico-8 related declarations
+        var gpio = getP8Gpio();
+        const loc_flags = {
+            "100M":
+                [0, 0b00000001, 1 ],
+            "200M":
+                [0, 0b00000010, 3 ],
+            "300M":
+                [0, 0b00000100, 4 ],
+            "400M":
+                [0, 0b00001000, 6 ],
+            "500M":
+                [0, 0b00010000, 8 ],
+            "600M":
+                [0, 0b00100000, 10],
+            "700M":
+                [0, 0b01000000, 11],
+            "800M":
+                [0, 0b10000000, 13],
+            "900M":
+                [1, 0b00000001, 14],
+            "1000M":
+                [1, 0b00000010, 16],
+            "1100M":
+                [1, 0b00000100, 17],
+            "Old Site":
+                [1, 0b00001000, 18],
+            "1300M":
+                [1, 0b00010000, 20],
+            "1400M":
+                [1, 0b00100000, 22],
+            "1500M":
+                [1, 0b01000000, 24],
+            "1600M":
+                [1, 0b10000000, 26],
+            "1700M":
+                [2, 0b00000001, 27],
+            "1800M":
+                [2, 0b00000010, 29],
+            "1900M":
+                [2, 0b00000100, 30],
+            "2000M":
+                [2, 0b00001000, 32],
+            "2100M":
+                [2, 0b00010000, 33],
+            "2200M":
+                [2, 0b00100000, 34],
+            "2300M":
+                [2, 0b01000000, 35],
+            "2400M":
+                [2, 0b10000000, 37],
+            "2500M":
+                [3, 0b00000001, 38],
+            "2600M":
+                [3, 0b00000010, 40],
+            "2700M":
+                [3, 0b00000100, 42],
+            "2800M":
+                [3, 0b00001000, 43],
+            "2900M":
+                [3, 0b00010000, 45],
+            "3000M":
+                [3, 0b00100000, 47],
+            "victory":
+                [3, 0b01000000, 49],
+            "100M Strawberry":
+                [4, 0b00000001, 2 ],
+            "300M Strawberry":
+                [4, 0b00000010, 5 ],
+            "400M Strawberry":
+                [4, 0b00000100, 7 ],
+            "500M Strawberry":
+                [4, 0b00001000, 9 ],
+            "700M Strawberry":
+                [4, 0b00010000, 12],
+            "900M Strawberry":
+                [4, 0b00100000, 15],
+            "Old Site Strawberry":
+                [4, 0b01000000, 19],
+            "1300M Strawberry":
+                [4, 0b10000000, 21],
+            "1400M Strawberry":
+                [5, 0b00000001, 23],
+            "1500M Strawberry":
+                [5, 0b00000010, 25],
+            "1700M Strawberry":
+                [5, 0b00000100, 28],
+            "1900M Strawberry":
+                [5, 0b00001000, 31],
+            "2300M Strawberry":
+                [5, 0b00010000, 36],
+            "2500M Strawberry":
+                [5, 0b00100000, 39],
+            "2600M Strawberry":
+                [5, 0b01000000, 41],
+            "2800M Strawberry":
+                [5, 0b10000000, 44],
+            "2900M Strawberry":
+                [6, 0b00000001, 46],
+            "3000M Strawberry":
+                [6, 0b00000010, 48],
+        }
+
+        const item_flags = {
+            "Springs":
+                [7, 0b00000001, 2],
+            "Balloons":
+                [7, 0b00000010, 3],
+            "Crumbling Blocks":
+                [7, 0b00000100, 4],
+            "Breakable Blocks":
+                [7, 0b00001000, 5],
+            "White Clouds":
+                [7, 0b00010000, 6],
+            "Keys":
+                [7, 0b00100000, 7],
+            "Double Dash":
+                [7, 0b01000000, 8],
+            "500M Checkpoint":
+                [8, 0b00000001, 10],
+            "1000M Checkpoint":
+                [8, 0b00000010, 11],
+            "1500M Checkpoint":
+                [8, 0b00000100, 12],
+            "2000M Checkpoint":
+                [8, 0b00001000, 13],
+            "2500M Checkpoint":
+                [8, 0b00010000, 14],
+            "Old Site Checkpoint":
+                [8, 0b00100000, 15],
+            "2200M Checkpoint":
+                [8, 0b01000000, 16],
+        }
+        const base_id = 0
+        let checked_locations = [];
+        let deathLinkOn = false;
+
+        function connectedListener(packet) {
+            console.log("we got here");
+            console.log(packet.slot_data.options);
+            let optionsByte = 0;
+            if (packet.slot_data.options.death_link) {
+                optionsByte += 1;
+                deathLinkOn = true;
+            }
+            gpio[39] = packet.slot_data.options.strawberries_required;
+            gpio[40] = optionsByte;
+            gpio[41] = packet.slot_data.options.death_link_amnesty;
+        }
+
+        client.deathLink.on("deathReceived", (source, string, time) => {
+            gpio[42] = 1;
+        });
+
+        client.socket.on("connected", connectedListener);
+
+        //add item handler for gpio layer
+        client.items.on("itemsReceived", (items, index) => {
+            //if this is a sync packet reset all our item addresses without changing anything else
+            if (index == 0) {
+                gpio[38] = 0
+                for (let flag in item_flags) {
+                    gpio[item_flags[flag][0]] &= (~item_flags[flag][1] << 28 >>> 28)
+                }
+            }
+            //go through all our item addresses and if they are not set, check the recieved items for their ap id, and set the gpio flag if we recieved it
+            //on the scale i expect pico-8 games to be, this will be good enough
+            for (let flag in item_flags) {
+                if (!(gpio[item_flags[flag][0]] & item_flags[flag][1])) {
+                    for (let i=0; i<items.length; i++) {
+                        let item = items[i]
+                        if (base_id + item_flags[flag][2] === item.id) {
+                            console.log(`adding item ${flag}`)
+                            gpio[item_flags[flag][0]] |= item_flags[flag][1]
+                        }
+                    }
+                }
+            }
+
+            for (let i=0; i<items.length; i++) {
+                let item = items[i]
+                if (item.id === 1) {
+                    gpio[38] += 1
+                }
+            }
+        });
+
+        // Connect to the Archipelago server
+        function connect_to_server(event) {
+            if (event !== null) {
+                event.preventDefault()
+            }
+            var url = document.getElementById("Hostname").value + ":" + document.getElementById("Port").value
+            var slot = document.getElementById("Name").value
+            var password = document.getElementById("Password").value ? document.getElementById("Password").value : null
+            var conn_options = {
+                password: password
+            }
+            if ("Protocol" in data) {
+                var pro = data["Protocol"].split("://").pop().split("@")
+                url = pro[1]
+                slot = pro[0].split(":")[0]
+                conn_options["password"] = password ?? pro[0].split(":")[1]
+            }
+            console.log(url)
+            console.log(slot)
+
+            checked_locations = [];
+
+
+            document.getElementById("status-connected").classList.add("default-hidden")
+            document.getElementById("status-failed").classList.add("default-hidden")
+
+            document.getElementById("status-connecting").classList.remove("default-hidden")
+            client
+                .login(url, slot, "Celeste Classic", conn_options)
+                .then(() => {
+                    console.log("Connected to the server");
+                    document.getElementById("status-connecting").classList.add("default-hidden")
+                    document.getElementById("status-connected").classList.remove("default-hidden")
+                    // You are now connected and authenticated to the server. You can add more code here if need be.
+                    if (deathLinkOn) {
+                        client.deathLink.enableDeathLink();
+                    }
+                })
+                .catch((error) => {
+                    console.error("Failed to connect:", error);
+                    document.getElementById("status-connecting").classList.add("default-hidden")
+                    document.getElementById("status-failed").classList.remove("default-hidden")
+                    // Handle the connection error.
+                });
+        }
+        form.addEventListener("submit", connect_to_server);
+
+        // Disconnect from the server when unloading window.
+        // window.addEventListener("beforeunload", () => {
+        //     client.disconnect();
+        // })
+
+        // add location handler for gpio layer
+        gpio.subscribe(async function(newIndices) {
+            for (let loc in loc_flags) {
+                if ((gpio[loc_flags[loc][0]] & loc_flags[loc][1]) !== 0) {
+                    const locationId = base_id + loc_flags[loc][2]
+                    if (loc === "victory") {
+                        client.goal()
+                    } else if (!checked_locations.includes(locationId)) {
+                        client.check(locationId)
+                        // await client.scout([locationId], 0);
+                        checked_locations.push(locationId);
+                    }
+                }
+            }
+            if (gpio[43] > 0) {
+                gpio[43] = 0;
+                client.deathLink.sendDeathLink(client.players.self.alias,client.players.self.alias+" failed to climb the mountain.");
+            }
+        });
+        if (data["auto"] === "True") {
+            console.log("autoconnecting")
+            connect_to_server(null)
+        }
+
+
+    </script>
+
+<body bgcolor=#303030>
+
+    <br>
+
+    <center><div>
+
+    <h1>Celeste Classic Client</h1>
+
+
+    <div id="mainDiv">
+        <form id="connection_details">
+            <table><tr style="vertical-align: top;">
+                <td align="right">
+                    <label for="fname">Hostname:</label>
+                    <input type="text" id="Hostname" name="Hostname"><br>
+
+                    <label for="fname">Port:</label>
+                    <input type="text" id="Port" name="Port"><br>
+
+                    <label for="fname">Name:</label>
+                    <input type="text" id="Name" name="Name"><br>
+
+                    <label for="fname">Password:</label>
+                    <input type="password" id="Password" name="Password">
+                </td>
+
+                <td>
+                    <a style="color: #FF6E59;" href="https://github.com/NyanMC/ap-celesteclassic">Source</a>
+                    <div class="submit-wrapper">
+                        <input type="submit" value="Submit"><br>
+                        <div class="status-wrapper">
+                            <div id="status-connected" class="default-hidden">Connected</div>
+                            <div id="status-failed" class="default-hidden">Connection Failed</div>
+                            <div id="status-connecting" class="default-hidden">Connecting...</div>
+                        </div>
+                    </div>
+                </td>
+            </tr></table>
+        </form>
+    </div></center></div>
+
+<div id="chat"></div>
+
+    <!-- start pico cart -->
+<script type="text/javascript" src="pico-window.js">
+
+</script>
+
+</head>
+
+<body style="padding:0px; margin:0px; background-color:#222; color:#ccc">
+
+
+
+<!-- Add any content above the cart here -->
+
+
+<div id="p8_frame_0" style="max-width:800px; max-height:800px; margin:auto;"> <!-- double function: limit size, and display only this div for touch devices -->
+<div id="p8_frame" style="display:flex; width:100%; max-width:95vw; height:100vw; max-height:60vh; margin:auto;">
+
+    <div id="p8_menu_buttons_touch" style="position:absolute; width:100%; z-index:10; left:0px;">
+        <div class="p8_menu_button" id="p8b_full"  style="float:left;margin-left:10px" onClick="p8_give_focus(); p8_request_fullscreen();"></div>
+        <div class="p8_menu_button" id="p8b_sound" style="float:left;margin-left:10px" onClick="p8_give_focus(); p8_create_audio_context(); Module.pico8ToggleSound();"></div>
+        <div class="p8_menu_button" id="p8b_close" style="float:right; margin-right:10px" onClick="p8_close_cart();"></div>
+    </div>
+
+    <div id="p8_container"
+        style="margin:auto; display:table;"
+        onclick="p8_create_audio_context(); p8_run_cart();">
+
+        <div id="p8_start_button" class="p8_start_button" style="width:100%; height:100%; display:flex;">
+            <img width=80 height=80 style="margin:auto;"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAABpklEQVR42u3au23DQBCEYUXOXIGKcujQXUgFuA0XIKgW90Q9oEAg+Ljd27vd2RsCf058gEDqhofPj+OB6SMCAQlIQAIyAhKQgARkBAQDnM6XSRsB7/2e/tSA0//12fCAKsQX3ntDA4oRFwBRIc0AixE38BAhTQGLEAsBUSDNAXcRhYDRIZsAPlp99VECRoXsDpgN0g0wC6Q7IDpkGEBUyG6A0+vKBtkdMBukG2AWSHdAdMgwgKiQ4QDRIMMCokCGB4wOCQPYFVKw2cABNocUjl6wgE0gFashPKAZpHJ2TQNYBVmxW6cDFENWDv9pAUshCVgJScBKSAISkD9hPkT4GkNAMdzepyj8Kye852EBLe51CZHHWQK4JcThD1SlcHPEYY/0a+A0n6SkGZV6w6WZNb3g4Id1b7hwgGhwYQBR4dwB0eHcALPAdQfMBhcOEA0uDCAqnDsgOpwbYBa4poA/31+rZYFrBriFpwGMCtcEcA9PAhgdzhywBK8EEQXOFFCCtwaIBmcGKMWbI6LCmQBq8R6hw5kAMgISkIAEJCAjIAEJSEBGQI9ukV7lRn9nD+gAAAAASUVORK5CYII="/>
+        </div>
+
+        <div id="p8_playarea" style="display:none; margin:auto;
+                -webkit-user-select:none; -moz-user-select: none; user-select: none; -webkit-touch-callout:none;
+        ">
+
+            <div  id="touch_controls_background"
+                  style=" pointer-events:none; display:none; background-color:#000;
+                         position:fixed; top:0px; left:0px; border:0; width:100vw; height:100vh">
+                &nbsp
+            </div>
+
+            <div style="display:flex; position:relative">
+                <!-- pointer-events turned off for mobile in p8_update_layout because need for desktop mouse -->
+                <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault();" >
+                </canvas>
+                <div class=p8_menu_buttons id="p8_menu_buttons" style="margin-left:10px;">
+                    <div class="p8_menu_button" style="position:absolute; bottom:125px" id="p8b_controls" onClick="p8_give_focus(); Module.pico8ToggleControlMenu();"></div>                    
+                    <div class="p8_menu_button" style="position:absolute; bottom:90px" id="p8b_pause" onClick="p8_give_focus(); Module.pico8TogglePaused(); p8_update_layout_hash = -22;"></div>
+                    <div class="p8_menu_button" style="position:absolute; bottom:55px" id="p8b_sound" onClick="p8_give_focus(); p8_create_audio_context(); Module.pico8ToggleSound();"></div>
+                    <div class="p8_menu_button" style="position:absolute; bottom:20px" id="p8b_full" onClick="p8_give_focus(); p8_request_fullscreen();"></div>
+                </div>
+            </div>
+
+
+            <!-- display after first layout update -->
+            <div  id="touch_controls_gfx"
+                  style=" pointer-events:none; display:table; 
+                         position:fixed; top:0px; left:0px; border:0; width:100vw; height:100vh">
+
+                    <img src="" id="controls_right_panel" style="position:absolute; opacity:0.5;">
+                    <img src="" id="controls_left_panel" style="position:absolute;  opacity:0.5;">
+                        
+            
+            </div> <!-- touch_controls_gfx -->
+
+            <!-- used for clipboard access & keyboard input; displayed and used by PICO-8 only once needed. can be safely removed if clipboard / key presses not needed. -->
+            <!-- (needs to be inside p8_playarea so that it still works under Chrome when fullscreened) -->
+            <!-- 0.2.5: added "display:none"; pico8.js shows on demand to avoid mac osx accent character selector // https://www.lexaloffle.com/bbs/?tid=47743 -->
+
+            <textarea id="codo_textarea" class="emscripten" style="display:none; position:absolute; left:-9999px; height:0px; overflow:hidden"></textarea>
+
+        </div> <!--p8_playarea -->
+
+    </div> <!-- p8_container -->
+
+</div> <!-- p8_frame -->
+</div> <!-- p8_frame_0 size limit -->
+
+<script type="text/javascript">
+
+    p8_update_layout();
+    p8_update_button_icons();
+
+    var canvas = document.getElementById("canvas");
+    Module = {};
+    Module.canvas = canvas;
+
+    // from @ultrabrite's shell: test if an AudioContext can be created outside of an event callback.
+    // If it can't be created, then require pressing the start button to run the cartridge
+
+    if (p8_autoplay)
+    {
+        var temp_context = new AudioContext();
+        temp_context.onstatechange = function ()
+        {
+            if (temp_context.state=='running')
+            {
+                p8_run_cart();
+                temp_context.close();
+            }
+        };
+    }
+
+    // pointer lock request needs to be inside a canvas interaction event
+    // pico8_state.request_pointer_lock is true when 0x5f2d bit 0 and bit 2 are set -- poke(0x5f2d,0x5) 
+    // note on mouse acceleration for future: // https://github.com/w3c/pointerlock/pull/49
+    canvas.addEventListener("click", function()
+    {
+        if (!p8_touch_detected)
+            if (pico8_state.request_pointer_lock)
+                canvas.requestPointerLock();
+    });
+    
+</script>
+
+    <!-- end pico cart -->
+
+
+</body></html>

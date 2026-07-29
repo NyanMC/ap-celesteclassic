@@ -1,0 +1,1 @@
+from .world import CelesteClassicWorld as CelesteClassicWorld
