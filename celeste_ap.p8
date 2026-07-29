@@ -46,7 +46,8 @@ memorial_texts = {
 	"-- celeste mountain -- #this memorial dedicated#   to all the haters   ", -- from oldeste
 	"-- celeste mountain -- #this memorial to those #who sent me raspberries",
 	"-- celeste mountain --#this memorial to those# perished by deathlink",
-	"-- celeste mountain --#this memorial to those#  stuck in sphere one "
+	"-- celeste mountain --#this memorial to those#  stuck in sphere one ",
+	"-- celeste mountain --#this memorial to those# who crashed in 0.1.0 "
 }
 
 memorial=memorial_texts[flr(rnd(#memorial_texts))]
@@ -1091,6 +1092,7 @@ message={
 	last=0,
 	draw=function(this)
 		this.text=memorial
+		if (this.text==nil) this.text="-- celeste mountain --#this memorial to those# perished on the climb"
 		if this.check(player,4,0) then
 			if this.index<#this.text then
 			 this.index+=0.5
@@ -1649,7 +1651,7 @@ function _draw()
 			print("start the game first!",0,0,8)
 			load_game_text -= 1
 		end
-		print("0.1.0",2,2,5)
+		print("0.1.0B",2,2,5)
 		print("x+c",58,80,5)
 		print("maddy thorson",40,96,5)
 		print("noel berry",46,102,5)
