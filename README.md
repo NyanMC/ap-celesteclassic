@@ -2,7 +2,7 @@
 
 The original Celeste Classic can be found here: https://www.lexaloffle.com/bbs/?pid=11722
 
-
+Info page: https://github.com/NyanMC/ap-celesteclassic/blob/main/apworld/docs/en_Celeste%20Classic.md
 
 gpio-listener and webpage template - https://github.com/benwiley4000/pico8-gpio-listener
 
